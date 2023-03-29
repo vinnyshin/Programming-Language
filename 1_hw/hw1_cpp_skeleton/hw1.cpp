@@ -1,5 +1,15 @@
 #include "List.h"
 
+List<int> countup_from1 (int x) {
+    std::function<List<int>(int)> count = [&](int from)->List<int> {
+        if(from == x) {
+            return List<int>{x};
+        } else {
+            return count(from + 1);
+        }
+    };
+    return count(1);
+}
 
 List<int> merge_lists(List<int> xs, List<int> ys) {
     // TODO: Students need to implement this function.

@@ -48,3 +48,79 @@ fun getAt(idx:int, xs:int list) =
     if idx = 0
     then hd xs
     else getAt(idx - 1, tl xs)
+
+fun countup_from1(x:int) = 
+	let fun count(from:int, to:int) =
+			if from = to
+			then to::[] (* to match pattern used to::[], not [to] *)
+			else from::count(from+1, to)
+	in
+		count(1, x)
+	end
+(* we can put out local helper function "count" to global scope *)
+
+(* this is better in a sense of redundancy *)
+fun countup_from1_better(x:int) =
+	let fun count(from:int) =
+			if from = x
+			then x::[]
+			else from::count(from+1)
+	in
+		count(x)
+	end
+
+fun bad_max(xs:int list) = 
+	if null xs
+	then 0 (* horrible style, we cannot tell whether output 0 is true max value of xs or null return *)
+	else if null (tl xs)
+	then hd xs
+	else if hd xs > bad_max (tl xs)
+	then hd xs
+	else bad_max (tl xs)
+
+fun good_max(xs: int list) =
+	if null xs
+	then 0
+	else if	null (tl xs)
+	then hd xs
+	else (* There wasn't a local variable to store the result of bad_max, so we called it twice that brought thr inefficiency *)
+		let val tl_ans = good_max(tl xs) (* if we use a local variable, there's no need to call it twice *)
+		in
+			if hd xs > tl_ans (* same feature as "else if hd xs > bad_max(tl xs)" *)
+			then hd xs
+			else tl_ans (* same feature as "else bad_max(tl xs)" *)
+		end
+
+fun better_max(xs:int list) = 
+	if null xs (* first empty checking *)
+	then NONE
+	else
+		let val tl_ans = better_max(tl xs)
+		in
+			if isSome tl_ans (* doubly empty checked in this line for using valOf correctly*)
+				andalso valOf tl_ans > hd xs (* If we don't prefer redundant valOf what should we do? *)
+			then
+				tl_ans
+			else SOME (hd xs)
+		end
+
+
+fun better_max2(xs:int list) =
+	if null xs
+	then NONE
+	else (* we eliminated redundant valOf calls using a helper function that guarantees nonemptyness of "xs" *)
+		let fun max_nonempty(xs:int list) =
+			if null (tl xs)
+			then hd xs
+			else
+				let val tl_ans = max_nonempty(tl xs)
+				in
+					if hd xs > tl_ans
+					then hd xs
+					else tl_ans
+				end
+		in
+			SOME (max_nonempty(xs))
+		end
+
+
