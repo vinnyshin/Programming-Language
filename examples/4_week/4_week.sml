@@ -102,3 +102,36 @@ fun tail_rev xs =
     in
         aux(xs, [])
     end
+
+fun n_times(f, n, x) =
+	if n=0
+	then x
+	else n_times(f, n-1, f x) (* made it tail recursive cf) f (n_times(f, n-1, x)) *)
+
+fun double x = x + x
+fun increment x = x + 1
+val x1 = n_times(double, 4, 7)
+val x2 = n_times(increment, 4, 7)
+val x3 = n_times(tl, 2, [4, 8, 12, 16])
+
+fun double_n_times (n,x) = n_times(double, n, x)
+fun nth_tail (n, x) = n_times(tl, n, x)
+
+fun map (f, xs) =
+    case xs of
+        [] => []
+      | x::xs1 => (f x)::map(f, xs1)
+
+fun filter(f, xs) =
+    case xs of
+        [] => []
+      | x::xs1 => if f x
+                  then x::filter(f, xs1)
+                  else filter(f, xs1)
+
+(*silly example*)
+fun double_or_triple f =
+    if f 7
+    then fn x => 2*x
+    else fn x => 3*x
+
