@@ -74,20 +74,7 @@ bool eval(Formula f) {
         [](box<struct NOT>& n) { return !eval(n->f); },
         [](box<struct ANDALSO>& a) { return eval(a->f1) && eval(a->f2); },
         [](box<struct ORELSE>& a) { return eval(a->f1) || eval(a->f2); },
-        [](box<struct IMPLY>& a) { 
-            bool x = eval(a->f1);
-            bool y = eval(a->f2);
-            if (y == true) {
-                // T T -> T
-                // F T -> T
-                return true;
-            } else if (x == true) {
-                // T F -> F
-                return false;
-            } else {
-                // F F -> T
-                return true;
-            }},
+        [](box<struct IMPLY>& a) { return !eval(a->f1) || eval(a->f2); },
         [](LESS& l) { return eval_expr(l.e1) < eval_expr(l.e2); },
       }, f);
 }
