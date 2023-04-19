@@ -1,14 +1,61 @@
 #include "List.h"
 
+int sum_pair_list(List<std::pair<int,int>> xs) {
+    if (xs.isEmpty()) {
+        return 0;
+    } else {
+        return xs.head().first + xs.head().second + sum_pair_list(xs.tail());
+    }
+}
+
+List<int> firsts (List<std::pair<int,int>> xs) {
+    if (xs.isEmpty()) {
+        return List<int>{};
+    } else {
+        return cons(xs.head().first, firsts(xs.tail()));
+    }
+}
+
 List<int> countup_from1 (int x) {
-    std::function<List<int>(int)> count = [&](int from)->List<int> {
+    std::function<List<int>(int)> aux_count = [&](int from)->List<int> {
         if(from == x) {
             return List<int>{x};
         } else {
-            return count(from + 1);
+            return cons(from, aux_count(from + 1));
         }
     };
-    return count(1);
+    return aux_count(1);
+}
+
+#include <optional>
+
+std::optional<int> better_max(List<int> xs) {
+    if (xs.isEmpty()) {
+        return std::nullopt;
+    } else {
+        auto maxOpt = better_max(xs.tail());
+        if (maxOpt.has_value() && maxOpt.value() > xs.head()) {
+            return maxOpt.value();
+        } else {
+            return std::optional<int>{xs.head()};
+        }
+    }
+}
+
+std::optional<int> better_max2(List<int> xs) {
+    if (xs.isEmpty()) {
+        return std::nullopt;
+    } else {
+        std::function<int(List<int>)> non_empty_max = [&](List<int> _xs)->int {
+            if (_xs.tail().isEmpty()) {
+                return _xs.head();
+            } else {
+                int max = non_empty_max(_xs.tail());
+                return max > _xs.head() ? max : _xs.head();
+            }
+        };
+        return std::optional<int>{non_empty_max(xs)};
+    }
 }
 
 List<int> merge_lists(List<int> xs, List<int> ys) {

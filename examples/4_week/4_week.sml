@@ -4,6 +4,14 @@ datatype exp = Constant of int
 			 | Multiply of exp * exp
 			 | If of bool * exp * exp
 
+fun case_eval e = 
+    case e of
+        Constant i => i
+      | Negate e => ~(case_eval(e))
+      | Add(e1, e2) => case_eval(e1) + case_eval(e2)
+      | Multiply(e1, e2) => case_eval(e1) * case_eval(e2)
+      | If(e0, e1, e2) => if e0 then case_eval(e1) else case_eval(e2)
+
 (*수학 함수 정의와 비슷하게 사용 가능*)
 fun eval (Constant(i)) = i
   | eval (Negate(e)) = ~ (eval e)
@@ -22,10 +30,9 @@ fun fast_fibo 0 = (1, 1)
     let val (n_1, n_2) = fast_fibo (n-1)
     in (n_1 + n_2, n_1)
     end
+(* acc를 활용했어 *)
 
 exception ListLengthMismatch
-
-
 (*
 ([1,2,3], [10,20,30], [100,200,300])
     => [(1,10,100), (2,20,200), (3,30,300)]
@@ -49,22 +56,40 @@ fun unzip3 triples =
         in (a::l1, b::l2, c::l3)
         end
 
-(*
-직접 해보기
-fun nondecreasing xs =
 (* returns true if the list is nondecreasing.
 * [1,2,3,4] => true
 * [3,2,1] => false
 *)
+fun nondecreasing (xs:int list):bool = 
+    case xs of
+        [] => true
+      | x::[] => true
+      | x::y::xs2 => x < y andalso nondecreasing(y::xs2)
 
-fun multsign (x1, x2) = 
 (* returns the sign of multiplying x1 and x2.
 * P for positive, 
 * N for negative, 
 * Z for zero
 * multsign(0, 1) => Z, multsign(~1, 1) => N
 *)
-*)
+
+datatype sgn = P | N | Z
+
+fun multsign (x1, x2) = 
+    let fun sign(x) =
+        if x > 0
+        then P
+        else if x < 0
+        then N
+        else Z
+    in
+        case (sign(x1), sign(x2)) of
+           (Z, _) => Z
+         | (_, Z) => Z
+         | (P, P) => P
+         | (N, N) => P
+         | (_, _) => N
+    end
 
 fun fact n =
     let fun aux (n, acc) =

@@ -25,7 +25,7 @@ val x3 = #2 x1
 val x4 = ((3, 5), ((4, 8), (0, false)))
 
 fun sum_list (xs: int list) = 
-    if null xs
+    if null xs (* if xs is [], "null xs" evaluates to true *)
     then 0
     else hd xs + sum_list(tl xs)
 
@@ -48,6 +48,27 @@ fun getAt(idx:int, xs:int list) =
     if idx = 0
     then hd xs
     else getAt(idx - 1, tl xs)
+
+(* 요놈을 tail recursion으로 바꾼다면? *)
+fun sum_pair_list (xs:(int*int) list):int = 
+	if null xs
+	then 0
+	else #1 (hd xs) + #2 (hd xs) + sum_pair_list(tl xs)
+
+fun firsts (xs:(int*int) list) = 
+	if null xs
+	then []
+	else #1 (hd xs)::firsts(tl xs)
+
+fun seconds (xs:(int*int) list) = 
+	if null xs
+	then []
+	else #2 (hd xs)::seconds(tl xs)
+
+fun sum_pair_list2 (xs:(int*int) list):int = 
+	if null xs
+	then 0
+	else sum_list(firsts xs) + sum_list(seconds xs)
 
 fun countup_from1(x:int) = 
 	let fun count(from:int, to:int) =
@@ -83,7 +104,7 @@ fun good_max(xs: int list) =
 	then 0
 	else if	null (tl xs)
 	then hd xs
-	else (* There wasn't a local variable to store the result of bad_max, so we called it twice that brought thr inefficiency *)
+	else (* There wasn't a local variable to store the result of bad_max, so we called it twice that brought the inefficiency *)
 		let val tl_ans = good_max(tl xs) (* if we use a local variable, there's no need to call it twice *)
 		in
 			if hd xs > tl_ans (* same feature as "else if hd xs > bad_max(tl xs)" *)
@@ -91,7 +112,7 @@ fun good_max(xs: int list) =
 			else tl_ans (* same feature as "else bad_max(tl xs)" *)
 		end
 
-fun better_max(xs:int list) = 
+fun better_max(xs:int list): int option = 
 	if null xs (* first empty checking *)
 	then NONE
 	else
@@ -105,6 +126,7 @@ fun better_max(xs:int list) =
 		end
 
 
+(* pattern matching으로 Arrow-pattern을 없앨 수 있는 방법은? *)
 fun better_max2(xs:int list) =
 	if null xs
 	then NONE

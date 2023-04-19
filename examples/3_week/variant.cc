@@ -31,7 +31,7 @@ variant<P,N,Z> multsign(int x, int y) {
   variant<P,N,Z> operator()(const Z& v1, const N& v2) { return variant<P,N,Z>(Z{});}
   variant<P,N,Z> operator()(const Z& v1, const Z& v2) { return variant<P,N,Z>(Z{});}
   };
-    /*
+    
     auto res = std::visit(overload{
             [](P& v1, P& v2) { return variant<P,N,Z>(P{});},
             [](N& v1, N& v2) { return variant<P,N,Z>(P{});},
@@ -40,7 +40,7 @@ variant<P,N,Z> multsign(int x, int y) {
             [](auto, auto) { return variant<P,N,Z>(Z{});},
         },
         sign(x), sign(y));
-    */
+    
 
     return std::visit(MyCase{}, sign(x), sign(y));
 }
@@ -75,7 +75,7 @@ int main()
     std::cout << "index = " << intFloatString.index() << std::endl;
 
     // try with get_if:
-    if (const auto intPtr (std::get_if<int>(&intFloatString)); intPtr) 
+    if (const auto intPtr (std::get_if<int>(&intFloatString)); intPtr) // == if (intPtr != nullPtr) 대신 이건 선언부를 if 안에 넣음
         std::cout << "int!" << *intPtr << "\n";
     else if (const auto floatPtr (std::get_if<float>(&intFloatString)); floatPtr) 
         std::cout << "float!" << *floatPtr << "\n";
@@ -98,13 +98,27 @@ int main()
         auto f = std::get<float>(intFloatString); 
         std::cout << "float! " << f << "\n";
     }
-    catch (std::bad_variant_access&) 
+    catch (std::bad_variant_access) 
     {
         std::cout << "our variant doesn't hold float at this moment...\n";
     }
 
-    std::variant<std::string, std::string> var42;
-    var42.emplace<1>("abc");
+    // 같은 type을 갖는 variant에는 emplace를 통해서 store할 index 명시가능
+    std::variant<std::string, std::string> varABC;
+    varABC.emplace<1>("abc");
+    const auto stringPtr = std::get_if<1>(&varABC);
+    std::cout << "stringPtr:" << *stringPtr << std::endl;
+
+    try
+    {
+        auto stringVal = std::get<0>(varABC);
+        std::cout << "stringPtr:" << stringVal << std::endl;
+    }
+    catch(std::bad_variant_access)
+    {
+        std::cout << "bad_index_access" << std::endl;
+    }
+    
 
     // visit:
     std::visit(SampleVisitor{}, intFloatString);

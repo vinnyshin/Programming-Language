@@ -19,7 +19,7 @@ fun eval(e:exp):int =
 	  Constant(i) => i
 	| Negate(e2) => ~(eval e2)
 	| Add(e1, e2) => eval(e1) + eval(e2)
-	| Multiply(e1, e2) => eval(e1) + eval(e2)
+	| Multiply(e1, e2) => eval(e1) * eval(e2)
 	| If(e1, e2, e3) => if e1 then eval(e2) else eval(e3)
 
 fun max_constant(e:exp):int =
@@ -38,6 +38,8 @@ fun max_constant(e:exp):int =
 
 datatype my_int_list = Empty
 					 | Cons of int * my_int_list
+
+val x = Cons(4, Cons(23, Cons(2008, Empty)))
 
 fun append_my_list(xs:my_int_list, ys:my_int_list):my_int_list =
   case xs of
