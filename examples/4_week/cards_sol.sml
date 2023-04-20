@@ -74,7 +74,7 @@ end
 (*acc를 써서 tail recursion을 사용함*)
 fun blackjack (score: int, hand: card list) =
   case hand of
-      Card (_, Ace)::rest => let val try1 = blackjack(score+11, rest)
+        Card (_, Ace)::rest => let val try1 = blackjack(score+11, rest)
                              in
                                if try1 <= 21 
                                then try1
@@ -85,7 +85,8 @@ fun blackjack (score: int, hand: card list) =
       | _ => score
 
 
-(*이런식으로 예외사항을 나중에 처리할 수도 있겠네 => 블랙잭 한정 더 효율적*)
+(*이런식으로 예외사항을 나중에 처리할 수도 있겠네*)
+(*blackjack을 try1 try2에서 2번 계산하지 않고, 1번만 계산하기에 효율적*)
 fun blackjack2 (score: int, hand: card list) =
   case hand of
       Card (_, Ace)::rest => let val rest_score = blackjack2(score, rest)

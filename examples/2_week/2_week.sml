@@ -104,7 +104,7 @@ fun good_max(xs: int list) =
 	then 0
 	else if	null (tl xs)
 	then hd xs
-	else (* There wasn't a local variable to store the result of bad_max, so we called it twice that brought the inefficiency *)
+	else (* There wasn't a local variable to store the result of bad_max, so we called it twice which brought the inefficiency *)
 		let val tl_ans = good_max(tl xs) (* if we use a local variable, there's no need to call it twice *)
 		in
 			if hd xs > tl_ans (* same feature as "else if hd xs > bad_max(tl xs)" *)

@@ -142,6 +142,11 @@ val x3 = n_times(tl, 2, [4, 8, 12, 16])
 fun double_n_times (n,x) = n_times(double, n, x)
 fun nth_tail (n, x) = n_times(tl, n, x)
 
+fun triple_n_times (n,x) =
+    n_times((fn y => 3*y), n, x)
+
+val triple = fn y => 3*y (* fun triple x = 3*x *)
+
 fun map (f, xs) =
     case xs of
         [] => []
@@ -159,4 +164,18 @@ fun double_or_triple f =
     if f 7
     then fn x => 2*x
     else fn x => 3*x
+
+(* if I want to call int * int * int a date *)
+type date = int * int * int
+
+(* 함수 type을 눈여겨봐 *)
+fun append_general(xs, ys) =
+    if null xs
+    then ys
+    else hd(xs)::append_general(tl(xs), ys)
+
+fun append_int_list(xs:int list, ys:int list) =
+    if null xs
+    then ys
+    else hd(xs)::append_general(tl(xs), ys)
 
