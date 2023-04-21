@@ -19,7 +19,7 @@ fun fold(f, acc, xs) =
 val ints = [1,9,5,1]
 val mymax = fold (fn (acc, x) =>  if x>acc then x else acc,
                           hd(ints), ints)
-val allPositive = fold (fn(acc, x) => if acc andalso x>0 then true else false, true, ints)                          
+val allPositive = fold (fn(acc, x) => acc andalso x>0, true, ints)                          
 
 
 (* 수조개의 nums_list가 있다고 해봐 *)
@@ -65,32 +65,13 @@ val global_max =
  *)
 (* filter(f, xs) *)
 
-fun count_multiples_nums (x, nums) = filter(fn num => num mod x = 0, nums)
-
-
-
-fun count_multiples (x, nums_list) =
-  let 
-    fun get_filtered_list (nums_list1) = 
-      case nums_list1 of
-        [] => []
-        | x'::xs' => count_multiples_nums(x, x') :: get_filtered_list(xs')
-
-    val multiples = get_filtered_list(nums_list)
-  in
-    map(List.length, multiples)
-  end
-
-
-
-(*
-fun count_multiples (x, nums_list) =
-  let 
-  val multiples = filter(fn nums => fold(fn(acc,xx) => xx mod x = 0, hd(nums),nums), nums_list)
-  in
-    map(List.length, multiples)
-  end
-*)
+fun count_multiples(x, nums_list) = 
+    let 
+    fun filter_multiples (xs) = filter(fn num => num mod x = 0, xs)
+    val local_multiples = map(filter_multiples, nums_list)
+    in
+        map(List.length, local_multiples)
+    end
 
 (* similar to above, given x, count the multiples of x in each list
  * and returns the index of the list having the maximum count.
@@ -118,7 +99,6 @@ in
         (0, 0, hd(counts)),
         counts)
 end
-
 
 (*
    (* the above implemented using record type instead of tuples*)

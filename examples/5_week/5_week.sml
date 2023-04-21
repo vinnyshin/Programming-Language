@@ -60,7 +60,7 @@ val t2 = sorted3 7 9 11
 fun curry_fold f acc xs =
     case xs of
         [] => acc
-      | x::xs2 => foldl(f, f(acc,x), xs2)
+      | x::xs2 => curry_fold f (f(acc,x)) xs2
 
 fun sum_inferior xs = curry_fold (fn (x,y) => x+y) 0 xs
 val sum = curry_fold (fn (x,y) => x+y) 0
