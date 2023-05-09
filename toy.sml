@@ -160,12 +160,7 @@ fun filterMultiples(lazyListVal:int lazyList, n:int): int lazyList =
         nullList => nullList
       | cons(element, lambda) => if (element mod n) = 0
                                  then filterMultiples(lambda(), n)
-                                 else cons(element, fn () => filterMultiples(lambda(), n))
-                                 
-fun test (lazyListVal) = 
-    case lazyListVal of
-        nullList => nullList
-      | cons(element, lambda) => lambda()
+                                 else cons(element, fn () => filterMultiples(lambda(), n))                                
 
 fun seive(lazyListVal: int lazyList):int lazyList =
     case lazyListVal of
@@ -260,7 +255,8 @@ fun is_straight (hand:card list) =
           | Card(_, Ace) => 1
           | Card(_, Num i) => i
         val hand_numbers:int list = map(card_to_number, hand)
-        val sorted_hand_numbers:int list = ListMergeSort.sort(fn (x,y) => x > y) hand_numbers
+        val sorted_hand_numbers:int list =
+            ListMergeSort.sort(fn (x,y) => x > y) hand_numbers
         fun aux_is_straight (xs:int list):bool =
             case xs of
             [] => false
