@@ -278,10 +278,13 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             return e2;
         },
         [&](box<struct Fun>& f) {
-            return e; /* TODO */
+            /* 확인 필요 */
+            Closure closure(makeNewEnvFrom(env), *f);
+            return Expr(closure);
         },
         [&](box<struct Closure>& c) {
-            return e; /* TODO */
+            /* 확인 필요 */
+            return e; /* Closure은 value이기에 e return */
         },
         [&](box<struct APair>& ap) {
             // After evaluating subexpression, apair needs to hold values
@@ -290,7 +293,7 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             Expr val2 = eval_under_env(ap->e2, env);
             assertValue(val2);
             
-            return Expr(APair(val1, val2)); /* TODO */
+            return Expr(APair(val1, val2));
         },
         [&](box<struct Fst>& fst) { 
             Expr e1 = eval_under_env(fst->e, env);
@@ -314,7 +317,27 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             return e;
         },
         [&](box<struct Call>& call) {
-            return e; /* TODO */
+            Expr funExpr = eval_under_env(call->funExpr, env);
+            Expr argVal = eval_under_env(call->actual, env);
+            assertValue(argVal);
+
+            if(is<Closure>(funExpr)) {
+                Closure closure = *std::get<box<struct Closure>>(funExpr);
+                
+                // extending env of the closure to argument
+                closure.env.insert_or_assign(closure.f.argName, argVal);
+                
+                // if the closure is not anonymous non-recursive function
+                if (!closure.f.funName.empty()) {
+                    // extending env of the closure to function body of itself
+                    closure.env.insert_or_assign(closure.f.funName, closure.f.body);    
+                }
+                
+                // it evaluates the closure's function body in the extended environment
+                return eval_under_env(closure.f.body, closure.env);
+            } else {
+                throw std::runtime_error("Unexpected types for sub-expressions of call");
+            }
         },
       }, e);
 }
@@ -323,7 +346,6 @@ Expr eval(Expr e) {
     std::map<string, Expr> env;
     return eval_under_env(e, env);
 }
-
 
 Expr makeIntList(int from, int to) {
     Expr next = AUnit();
@@ -435,10 +457,10 @@ int main() {
     // std::cout << toString(e2) << " = " << i.val << std::endl;
 
 
-    // Expr e3 = Call(Fun("add1", "x", Add(Var("x"), Int(1))), Int(41));
-    // res = eval_under_env(e3, env);
-    // i = std::get<Int>(res);
-    // std::cout << toString(e3) << " = " << i.val << std::endl; 
+    Expr e3 = Call(Fun("add1", "x", Add(Var("x"), Int(1))), Int(41));
+    res = eval_under_env(e3, env);
+    Int i = std::get<Int>(res);
+    std::cout << toString(e3) << " = " << i.val << std::endl; 
 
     Expr e4 = IfGreater(Int(1), Int(0), Int(42), Int(-42));
     res = eval_under_env(e4, env);
