@@ -238,7 +238,7 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             } else {
                 return Expr(Int(0));
             }
-        },
+        },  
         [&](box<struct IfGreater>& ifgt) {
             Expr e1 = eval_under_env(ifgt->e1, env);
             Expr e2 = eval_under_env(ifgt->e2, env);
@@ -259,7 +259,23 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             }
         }, 
         [&](box<struct MLet>& l) {
-            return e; /* TODO */
+            /*
+            fun test (x) = (let val x = e1 in e2 end) + (let val y = e1 in e2 end)
+            가 있다고 하자.
+            let이 Env를 copy하지 않고 x를 caller env에 등록하면
+            ex) env[l->varName] = eval_under_env(l->e1, env);
+            두번째 let 수행할 때 val x = e1을 활용할 수 있게 된다.
+            말이 안되는거지.
+            근데 C++에서는 기본적으로 map을 함수끼리 전달할 때 copy해서 전달하기 때문에
+            makeNewEnvFrom을 사용하지 않아도 돼 (addtional copy가 생겨)
+            */
+            std::map<string, Expr> mLetEnv = makeNewEnvFrom(env);
+            Expr val = eval_under_env(l->e1, mLetEnv);
+            assertValue(val);
+            mLetEnv.insert_or_assign(l->varName, val);
+
+            Expr e2 = eval_under_env(l->e2, mLetEnv);
+            return e2;
         },
         [&](box<struct Fun>& f) {
             return e; /* TODO */
@@ -374,6 +390,16 @@ int main() {
     std::cout << toString(isAUnitTestExpr1) << " = " << toString(res) << std::endl;
     res = eval_under_env(isAUnitTestExpr2, env);
     std::cout << toString(isAUnitTestExpr2) << " = " << toString(res) << std::endl;
+    
+    Expr mLetTestExpr1 = MLet("x", 3, Add(Var("x"), Int(3)));
+    Expr mLetTestExpr2 = Add(MLet("x", 3, Add(Var("x"), Int(3))), MLet("x", 4, Add(Var("x"), Int(4))));
+    Expr mLetTestExpr3 = MLet("x", 3, MLet("x", 4, Add(Var("x"), Int(4))));
+    res = eval_under_env(mLetTestExpr1, env);
+    std::cout << toString(mLetTestExpr1) << " = " << toString(res) << std::endl;
+    res = eval_under_env(mLetTestExpr2, env);
+    std::cout << toString(mLetTestExpr2) << " = " << toString(res) << std::endl;
+    res = eval_under_env(mLetTestExpr3, env);
+    std::cout << toString(mLetTestExpr3) << " = " << toString(res) << std::endl;
     
     // Int i = std::get<Int>(res);
     // std::cout << toString(e) << " = " << i.val << std::endl;
