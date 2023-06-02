@@ -244,10 +244,10 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             Expr e2 = eval_under_env(ifgt->e2, env);
 
             if (is<Int>(e1) && is<Int>(e2)) {
-                int i1 = std::get<Int>(e1).val;
-                int i2 = std::get<Int>(e2).val;
+                Int i1 = std::get<Int>(e1);
+                Int i2 = std::get<Int>(e2);
                 
-                if (i1 > i2) {
+                if (i1.val > i2.val) {
                     Expr e3 = eval_under_env(ifgt->e3, env);
                     return e3;
                 } else {
@@ -293,10 +293,25 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             return Expr(APair(val1, val2)); /* TODO */
         },
         [&](box<struct Fst>& fst) { 
-            return e; /* TODO */
+            Expr e1 = eval_under_env(fst->e, env);
+
+            if(is<APair>(e1)) {
+                APair ap = *std::get<box<struct APair>>(e1);
+                return ap.e1;
+            } else {
+                throw std::runtime_error("Unexpected types for sub-expressions of fst");
+            }
         },
         [&](box<struct Snd>& snd) { 
-            return e; /* TODO */
+            Expr e1 = eval_under_env(snd->e, env);
+
+            if(is<APair>(e1)) {
+                APair ap = *std::get<box<struct APair>>(e1);
+                return ap.e2;
+            } else {
+                throw std::runtime_error("Unexpected types for sub-expressions of snd");
+            }
+            return e;
         },
         [&](box<struct Call>& call) {
             return e; /* TODO */
@@ -436,6 +451,15 @@ int main() {
     Expr e6 = APair(Add(Int(0), Int(10)), APair(Int(1), AUnit()));
     res = eval_under_env(e6, env);
     std::cout << toString(e6) << " = " << toString(res) << std::endl;
+
+    Expr fstTestExpr = Fst(e6);
+    res = eval_under_env(fstTestExpr, env);
+    std::cout << toString(fstTestExpr) << " = " << toString(res) << std::endl;
+    
+    Expr sndTestExpr = Snd(e6);
+    res = eval_under_env(sndTestExpr, env);
+    std::cout << toString(sndTestExpr) << " = " << toString(res) << std::endl;
+    
 
     // Expr e7 = makeIntList(0, 2);
     // std::cout << toString(e7) << " = " << toString(e7) << std::endl;
