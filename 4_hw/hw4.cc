@@ -229,11 +229,15 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             throw std::runtime_error("Unexpected types for sub-expressions of Add");
           }
         },
+        [&](AUnit& au) { return e; /* AUnit은 Int Var 처럼 value이기에 그냥 e return */ },
+        [&](box<struct IsAUnit>& isa) {
+            Expr e1 = eval_under_env(isa->e, env);
 
-        // TODO: Students need to implement following functions.
-        [&](AUnit& au) { return e; /* TODO */ },
-        [&](box<struct IsAUnit>& isa) { 
-            return e; /* TODO */
+            if(is<AUnit>(e1)) {
+                return Expr(Int(1));
+            } else {
+                return Expr(Int(0));
+            }
         },
         [&](box<struct IfGreater>& ifgt) {
             Expr e1 = eval_under_env(ifgt->e1, env);
@@ -302,6 +306,7 @@ Expr IfAUnit(Expr e1, Expr e2, Expr e3) {
 
 Expr MuplMap() {
     // TODO
+
     // pseudo code in ML:
     // fn fun_arg =>
     //    let fun muplrec(lst) =
@@ -309,6 +314,8 @@ Expr MuplMap() {
     //           then AUnit()
     //           else APair(fun_arg(Fst(lst)),
     //                      muplrec(Snd(lst)))             
+    //    in
+    //      muplrec /* UPDATED */
     //    end
 }
 
@@ -320,13 +327,54 @@ Expr MuplMapAddN() {
     // end
 }
 
+Expr ToMuplList(List<Expr> exprs) {
+    if (exprs.tail().isEmpty()) {
+        return Expr(APair(exprs.head(), AUnit()));
+    } else {
+        return Expr(APair(exprs.head(), ToMuplList(exprs.tail())));
+    }
+}
+
+List<Expr> FromMuplList(Expr muplList) {
+    if (is<APair>(muplList)) {
+        APair pair = *std::get<box<struct APair>>(muplList);
+        if (is<AUnit>(pair.e2)) {
+            return makeList<Expr>(pair.e1);
+        } else {
+            return cons<Expr>(pair.e1, FromMuplList(pair.e2));
+        }
+    } else {
+        throw std::runtime_error(toString(muplList) + " is not a APair(MuplList)!");
+    }
+}
+
 int main() {
     // Test code for eval()
     std::map<string, Expr> env;
     env.insert_or_assign("a", Expr(Int(40)));
 
+    List<Expr> exprs = makeList<Expr, Expr, Expr, Expr>(Add(Var("a"), Int(2)), Var("b"), Int(3), Add(Var("c"), Int(4)));
+    Expr muplList = ToMuplList(exprs);
+    std::cout << toString(muplList) << std::endl;
+
+    List<Expr> exprs2 = FromMuplList(muplList);
+    
+    forEach(exprs2, [](Expr v) 
+    {
+        std::cout << toString(v) << " "; 
+    });
+    std::cout << std::endl;
+
     Expr e = Add(Var("a"), Int(2));
     Expr res = eval_under_env(e, env);
+
+    Expr isAUnitTestExpr1 = IsAUnit(Add(Add(Int(2), Int(3)), Int(3)));
+    Expr isAUnitTestExpr2 = IsAUnit(AUnit());
+    res = eval_under_env(isAUnitTestExpr1, env);
+    std::cout << toString(isAUnitTestExpr1) << " = " << toString(res) << std::endl;
+    res = eval_under_env(isAUnitTestExpr2, env);
+    std::cout << toString(isAUnitTestExpr2) << " = " << toString(res) << std::endl;
+    
     // Int i = std::get<Int>(res);
     // std::cout << toString(e) << " = " << i.val << std::endl;
 
