@@ -329,8 +329,8 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
                 
                 // if the closure is not anonymous non-recursive function
                 if (!closure.f.funName.empty()) {
-                    // extending env of the closure to function body of itself
-                    closure.env.insert_or_assign(closure.f.funName, closure.f.body);    
+                    // extending env of the closure to closure itself
+                    closure.env.insert_or_assign(closure.f.funName, closure);    
                 }
                 
                 // it evaluates the closure's function body in the extended environment
@@ -407,85 +407,140 @@ List<Expr> FromMuplList(Expr muplList) {
     }
 }
 
-int main() {
-    // Test code for eval()
-    std::map<string, Expr> env;
-    env.insert_or_assign("a", Expr(Int(40)));
-
+void TestMuplListAndFromMuplList() {
     List<Expr> exprs = makeList<Expr, Expr, Expr, Expr>(Add(Var("a"), Int(2)), Var("b"), Int(3), Add(Var("c"), Int(4)));
     Expr muplList = ToMuplList(exprs);
-    std::cout << toString(muplList) << std::endl;
-
-    List<Expr> exprs2 = FromMuplList(muplList);
     
+    std::cout << "==========TestMuplList==========" << std::endl;
+    std::cout << toString(muplList) << std::endl;
+    std::cout << "================================" << std::endl;
+    
+    List<Expr> exprs2 = FromMuplList(muplList);
+
+    std::cout << "==========FromMuplList==========" << std::endl;
     forEach(exprs2, [](Expr v) 
     {
         std::cout << toString(v) << " "; 
     });
     std::cout << std::endl;
+    std::cout << "================================" << std::endl;
+}
 
+void TestAdd() {
+    std::map<string, Expr> env;
+    env.insert_or_assign("a", Expr(Int(40)));
     Expr e = Add(Var("a"), Int(2));
     Expr res = eval_under_env(e, env);
 
-    Expr isAUnitTestExpr1 = IsAUnit(Add(Add(Int(2), Int(3)), Int(3)));
-    Expr isAUnitTestExpr2 = IsAUnit(AUnit());
-    res = eval_under_env(isAUnitTestExpr1, env);
-    std::cout << toString(isAUnitTestExpr1) << " = " << toString(res) << std::endl;
-    res = eval_under_env(isAUnitTestExpr2, env);
-    std::cout << toString(isAUnitTestExpr2) << " = " << toString(res) << std::endl;
+    std::cout << "==============Add==============" << std::endl;
+    std::cout << toString(e) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+}
+
+void TestIsAUnit() {
+    std::map<string, Expr> env;   
+    Expr expr1 = IsAUnit(Add(Add(Int(2), Int(3)), Int(3)));
+    Expr expr2 = IsAUnit(AUnit());
     
-    Expr mLetTestExpr1 = MLet("x", 3, Add(Var("x"), Int(3)));
-    Expr mLetTestExpr2 = Add(MLet("x", 3, Add(Var("x"), Int(3))), MLet("x", 4, Add(Var("x"), Int(4))));
-    Expr mLetTestExpr3 = MLet("x", 3, MLet("x", 4, Add(Var("x"), Int(4))));
-    res = eval_under_env(mLetTestExpr1, env);
-    std::cout << toString(mLetTestExpr1) << " = " << toString(res) << std::endl;
-    res = eval_under_env(mLetTestExpr2, env);
-    std::cout << toString(mLetTestExpr2) << " = " << toString(res) << std::endl;
-    res = eval_under_env(mLetTestExpr3, env);
-    std::cout << toString(mLetTestExpr3) << " = " << toString(res) << std::endl;
+    std::cout << "==============IsAUnit==============" << std::endl;
+    Expr res = eval_under_env(expr1, env);
+    std::cout << toString(expr1) << " = " << toString(res) << std::endl;
     
-    // Int i = std::get<Int>(res);
-    // std::cout << toString(e) << " = " << i.val << std::endl;
+    res = eval_under_env(expr2, env);
+    std::cout << toString(expr2) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+}
 
-    // Expr e2 = MLet("a", Int(5), MLet("b", Int(10), Add(Var("a"), Var("b"))));
-    // res = eval_under_env(e2, env);
-    // i = std::get<Int>(res);
-    // std::cout << toString(e2) << " = " << i.val << std::endl;
-
-    // res = eval(e2);
-    // i = std::get<Int>(res);
-    // std::cout << toString(e2) << " = " << i.val << std::endl;
-
-
-    Expr e3 = Call(Fun("add1", "x", Add(Var("x"), Int(1))), Int(41));
-    res = eval_under_env(e3, env);
-    Int i = std::get<Int>(res);
-    std::cout << toString(e3) << " = " << i.val << std::endl; 
-
-    Expr e4 = IfGreater(Int(1), Int(0), Int(42), Int(-42));
-    res = eval_under_env(e4, env);
-    std::cout << toString(e4) << " = " << toString(res) << std::endl; 
-
-    // Expr e5 = MLet("a", Int(5), Add(Var("a"), MLet("a", Int(10), Add(Var("a"), Int(1)))));
-    // res = eval_under_env(e5, env);
-    // std::cout << toString(e5) << " = " << toString(res) << std::endl;
-
-    Expr e6 = APair(Add(Int(0), Int(10)), APair(Int(1), AUnit()));
-    res = eval_under_env(e6, env);
-    std::cout << toString(e6) << " = " << toString(res) << std::endl;
-
-    Expr fstTestExpr = Fst(e6);
-    res = eval_under_env(fstTestExpr, env);
-    std::cout << toString(fstTestExpr) << " = " << toString(res) << std::endl;
+void TestMLet() {
+    std::map<string, Expr> env;
+    Expr expr1 = MLet("x", 3, Add(Var("x"), Int(3)));
+    Expr expr2 = Add(MLet("x", 3, Add(Var("x"), Int(3))), MLet("x", 4, Add(Var("x"), Int(4))));
+    Expr expr3 = MLet("x", 3, MLet("x", 4, Add(Var("x"), Int(4))));
+    Expr expr4 = MLet("a", Int(5), MLet("b", Int(10), Add(Var("a"), Var("b"))));
+    Expr expr5 = MLet("a", Int(5), Add(Var("a"), MLet("a", Int(10), Add(Var("a"), Int(1)))));
     
-    Expr sndTestExpr = Snd(e6);
-    res = eval_under_env(sndTestExpr, env);
-    std::cout << toString(sndTestExpr) << " = " << toString(res) << std::endl;
+    std::cout << "==============MLet==============" << std::endl;
+    Expr res = eval_under_env(expr1, env);
+    std::cout << toString(expr1) << " = " << toString(res) << std::endl;
     
+    res = eval_under_env(expr2, env);
+    std::cout << toString(expr2) << " = " << toString(res) << std::endl;
+    
+    res = eval_under_env(expr3, env);
+    std::cout << toString(expr3) << " = " << toString(res) << std::endl;
+
+    res = eval_under_env(expr4, env);
+    std::cout << toString(expr4) << " = " << toString(res) << std::endl;
+    
+    res = eval_under_env(expr5, env);
+    std::cout << toString(expr5) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+}
+
+void TestAPair() {
+    std::map<string, Expr> env;
+
+    std::cout << "==============APair==============" << std::endl;
+    Expr expr = APair(Add(Int(0), Int(10)), APair(Int(1), AUnit()));
+    Expr res = eval_under_env(expr, env);
+    std::cout << toString(expr) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+}
+
+void TestFstAndSnd() {
+    std::map<string, Expr> env;
+
+    Expr ap = APair(Add(Int(0), Int(10)), APair(Int(1), AUnit()));
+    Expr expr1 = Fst(ap);
+    Expr res = eval_under_env(expr1, env);
+    
+    std::cout << "==============Fst==============" << std::endl;
+    std::cout << toString(expr1) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+
+    Expr expr2 = Snd(ap);
+    res = eval_under_env(expr2, env);
+    
+    std::cout << "==============Snd==============" << std::endl;
+    std::cout << toString(expr2) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+}
+
+
+void TestIfGreater() {
+    std::map<string, Expr> env;
+    
+    Expr expr = IfGreater(Int(1), Int(0), Int(42), Int(-42));
+    Expr res = eval_under_env(expr, env);
+    
+    std::cout << "==============IfGreater==============" << std::endl;
+    std::cout << toString(expr) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+}
+
+void TestCall() {
+    std::map<string, Expr> env;
+    
+    Expr expr1 = Call(Fun("add1", "x", Add(Var("x"), Int(1))), Int(41));
+    Expr expr2 = Call(Fun("recursive_add", "x",
+                IfGreater(Int(5), Var("x"), Add(Int(1), Call(Var("recursive_add"), Add(Var("x"), Int(1)))), Int(0))),
+                Int(1));
+
+    std::cout << "==============Call==============" << std::endl;
+    Expr res = eval_under_env(expr1, env);
+    std::cout << toString(expr1) << " = " << toString(res) << std::endl;
+
+    res = eval_under_env(expr2, env);
+    std::cout << toString(expr2) << " = " << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+}
+
+int main() {
+    // Test code for eval()
+    TestCall();
 
     // Expr e7 = makeIntList(0, 2);
     // std::cout << toString(e7) << " = " << toString(e7) << std::endl;
-
 
     // Expr e8 = eval(Call(Call(MuplMapAddN(), Int(10)), makeIntList(0, 5)));
     // std::cout << toString(e8) << " = " << toString(e8) << std::endl;
