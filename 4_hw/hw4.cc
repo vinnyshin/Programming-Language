@@ -284,7 +284,13 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             return e; /* TODO */
         },
         [&](box<struct APair>& ap) {
-            return e; /* TODO */
+            // After evaluating subexpression, apair needs to hold values
+            Expr val1 = eval_under_env(ap->e1, env);
+            assertValue(val1);
+            Expr val2 = eval_under_env(ap->e2, env);
+            assertValue(val2);
+            
+            return Expr(APair(val1, val2)); /* TODO */
         },
         [&](box<struct Fst>& fst) { 
             return e; /* TODO */
@@ -427,9 +433,9 @@ int main() {
     // res = eval_under_env(e5, env);
     // std::cout << toString(e5) << " = " << toString(res) << std::endl;
 
-    // Expr e6 = APair(Add(Int(0), Int(10)), APair(Int(1), AUnit()));
-    // res = eval_under_env(e6, env);
-    // std::cout << toString(e6) << " = " << toString(res) << std::endl;
+    Expr e6 = APair(Add(Int(0), Int(10)), APair(Int(1), AUnit()));
+    res = eval_under_env(e6, env);
+    std::cout << toString(e6) << " = " << toString(res) << std::endl;
 
     // Expr e7 = makeIntList(0, 2);
     // std::cout << toString(e7) << " = " << toString(e7) << std::endl;
