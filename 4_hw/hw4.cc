@@ -278,12 +278,25 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             return e2;
         },
         [&](box<struct Fun>& f) {
-            /* 확인 필요 */
             Closure closure(makeNewEnvFrom(env), *f);
+            
+            /*
+            std::cout << closure.f.funName << std::endl;
+            if (!closure.f.funName.empty()) {
+                // extending env of the closure to closure itself
+                closure.env.insert_or_assign(closure.f.funName, closure);    
+            }
+            Closure closure2 = *std::get<box<struct Closure>>(envlookup(closure.env, Var("recursive_add")));
+            std::cout << closure2.env.count("recursive_add") << std::endl;
+            closure.env.insert_or_assign(closure.f.funName, closure);
+            이 구문에서 우리가 만든 closure의 복사본의 env에 recursive_add가 추가되긴 하지만
+            old closure을 env에 넣기 때문에 closure2에서 recursive_add가 있는지 보면 없는 것으로 나와
+            이런 문제를 가지기에 closure을 evaluation할 때 그때 env를 extend하는거야 만들때 extend하는게 아니라
+            */
+                
             return Expr(closure);
         },
         [&](box<struct Closure>& c) {
-            /* 확인 필요 */
             return e; /* Closure은 value이기에 e return */
         },
         [&](box<struct APair>& ap) {
@@ -330,9 +343,8 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
                 // if the closure is not anonymous non-recursive function
                 if (!closure.f.funName.empty()) {
                     // extending env of the closure to closure itself
-                    closure.env.insert_or_assign(closure.f.funName, closure);    
+                    closure.env.insert_or_assign(closure.f.funName, closure);
                 }
-                
                 // it evaluates the closure's function body in the extended environment
                 return eval_under_env(closure.f.body, closure.env);
             } else {
@@ -524,14 +536,18 @@ void TestCall() {
     Expr expr1 = Call(Fun("add1", "x", Add(Var("x"), Int(1))), Int(41));
     Expr expr2 = Call(Fun("recursive_add", "x",
                 IfGreater(Int(5), Var("x"), Add(Int(1), Call(Var("recursive_add"), Add(Var("x"), Int(1)))), Int(0))),
-                Int(1));
-
+                Int(0));
+    Expr expr3 = Call(Fun("", "x", Add(Var("x"), Int(5))), Int(10));
+    
     std::cout << "==============Call==============" << std::endl;
     Expr res = eval_under_env(expr1, env);
     std::cout << toString(expr1) << " = " << toString(res) << std::endl;
 
     res = eval_under_env(expr2, env);
     std::cout << toString(expr2) << " = " << toString(res) << std::endl;
+    
+    res = eval_under_env(expr3, env);
+    std::cout << toString(expr3) << " = " << toString(res) << std::endl;
     std::cout << "================================" << std::endl;
 }
 
