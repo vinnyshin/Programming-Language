@@ -229,7 +229,7 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             throw std::runtime_error("Unexpected types for sub-expressions of Add");
           }
         },
-        [&](AUnit& au) { return e; /* AUnit은 Int Var 처럼 value이기에 그냥 e return */ },
+        [&](AUnit& au) { return e; /* AUnit은 value이기에 e return */ },
         [&](box<struct IsAUnit>& isa) {
             Expr e1 = eval_under_env(isa->e, env);
 
@@ -264,7 +264,7 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             가 있다고 하자.
             let이 Env를 copy하지 않고 x를 caller env에 등록하면
             ex) env[l->varName] = eval_under_env(l->e1, env);
-            두번째 let 수행할 때 val x = e1을 활용할 수 있게 된다.
+            두번째 let 수행할 때 val x = e1을 쓰게 된다.
             말이 안되는거지.
             근데 C++에서는 기본적으로 map을 함수끼리 전달할 때 copy해서 전달하기 때문에
             makeNewEnvFrom을 사용하지 않아도 돼 (addtional copy가 생겨)
@@ -327,7 +327,6 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
             } else {
                 throw std::runtime_error("Unexpected types for sub-expressions of snd");
             }
-            return e;
         },
         [&](box<struct Call>& call) {
             Expr funExpr = eval_under_env(call->funExpr, env);
@@ -376,8 +375,6 @@ Expr IfAUnit(Expr e1, Expr e2, Expr e3) {
 }
 
 Expr MuplMap() {
-    // TODO
-
     // pseudo code in ML:
     // fn fun_arg =>
     //    let fun muplrec(lst) =
@@ -388,14 +385,30 @@ Expr MuplMap() {
     //    in
     //      muplrec /* UPDATED */
     //    end
+
+    Expr expr = Fun("", "fun_arg",
+                    Fun("muplrec", "lst", 
+                        IfAUnit(Var("lst"),
+                                AUnit(),
+                                APair(
+                                    Call(Var("fun_arg"), Fst(Var("lst"))),
+                                    Call(Var("muplrec"), Snd(Var("lst")))
+                                )
+                        )
+                    )
+                );
+    return expr;
 }
 
 Expr MuplMapAddN() {
-    // TODO
     // pseudo code in ML:
     // let val map = MuplMap() in
     //    fn I => map(fn x => x+I)
     // end
+    
+    Expr map = MuplMap();
+    Expr expr2 = Fun("", "I", Call(map, Fun("", "x", Add(Var("x"), Var("I")))));
+    return expr2;
 }
 
 Expr ToMuplList(List<Expr> exprs) {
@@ -420,7 +433,7 @@ List<Expr> FromMuplList(Expr muplList) {
 }
 
 void TestMuplListAndFromMuplList() {
-    List<Expr> exprs = makeList<Expr, Expr, Expr, Expr>(Add(Var("a"), Int(2)), Var("b"), Int(3), Add(Var("c"), Int(4)));
+    List<Expr> exprs = makeList<Expr, Expr, Expr, Expr>(Add(Int(5), Int(2)), AUnit(), Int(3), Add(Int(0), Int(4)));
     Expr muplList = ToMuplList(exprs);
     
     std::cout << "==========TestMuplList==========" << std::endl;
@@ -432,9 +445,32 @@ void TestMuplListAndFromMuplList() {
     std::cout << "==========FromMuplList==========" << std::endl;
     forEach(exprs2, [](Expr v) 
     {
-        std::cout << toString(v) << " "; 
+        std::cout << toString(v) << ", "; 
     });
     std::cout << std::endl;
+    std::cout << "================================" << std::endl;
+}
+
+void TestMuplMapAndMuplMapAddN() {
+    Expr muplList = makeIntList(0, 5);
+
+    std::cout << "============MuplMap============" << std::endl;
+    std::map<string, Expr> env;
+    Expr expr1 = MuplMap();
+    Expr expr2 = Call(expr1, Fun("addOne", "x", Add(Var("x"), Int(1))));
+    Expr res = eval_under_env(expr2, env);
+    std::cout << toString(expr2) << std::endl;
+    std::cout << toString(res) <<std::endl;
+    Expr expr3 = Call(res, muplList);
+    res = eval_under_env(expr3, env);
+    std::cout << toString(expr3) << std::endl;
+    std::cout << toString(res) << std::endl;
+    std::cout << "================================" << std::endl;
+    
+    std::cout << "==========MuplMapAdd===========" << std::endl;
+    Expr expr4 = Call(Call(MuplMapAddN(), Int(10)), makeIntList(0, 5));
+    res = eval(expr4);
+    std::cout << toString(expr4) << " = " << toString(res) << std::endl;
     std::cout << "================================" << std::endl;
 }
 
@@ -518,7 +554,6 @@ void TestFstAndSnd() {
     std::cout << "================================" << std::endl;
 }
 
-
 void TestIfGreater() {
     std::map<string, Expr> env;
     
@@ -552,14 +587,5 @@ void TestCall() {
 }
 
 int main() {
-    // Test code for eval()
-    TestCall();
-
-    // Expr e7 = makeIntList(0, 2);
-    // std::cout << toString(e7) << " = " << toString(e7) << std::endl;
-
-    // Expr e8 = eval(Call(Call(MuplMapAddN(), Int(10)), makeIntList(0, 5)));
-    // std::cout << toString(e8) << " = " << toString(e8) << std::endl;
-
     return 0;
 }
