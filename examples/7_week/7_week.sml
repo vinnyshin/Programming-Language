@@ -1,3 +1,21 @@
+(* In the Library side *)
+val callbacks: (int->unit) list ref = ref []
+fun onKeyEvent f = callbacks := f :: !callbacks
+fun onEvent i =
+    let fun loop fs = 
+            case fs of
+                [] => ()
+              | f::fs => (f i; loop fs)
+    in loop(!callbacks) end
+
+(* In the client side *)
+val timesPressed = ref 0
+val _ = onKeyEvent (fn _ => timesPressed := (!timesPressed) + 1)
+fun printIfPressed i = 
+    onKeyEvent(fn j =>
+        if i = j then print("Pressed "^Int.toString(i))
+        else ())
+
 structure MyMathLib =
 struct
 

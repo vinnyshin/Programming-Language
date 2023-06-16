@@ -63,13 +63,14 @@ int main() {
   int max = foldl([](int a, int b) { return a>b?a:b;}, 0, l);
   int better_max = foldl([](int a, int b) { return a>b?a:b; }, l.head(), l.tail());
 
+  std::cout << "sum:" << sum << ", max:" << max << std::endl;
+  std::cout << "better_sum:" << better_sum << ", better_max:" << better_max << std::endl;
+
   int val = 3;
   List<int> l2;
   l2 = l2.cons(4).cons(3).cons(2).cons(1).cons(0);
   bool anyLargerThanVal = foldl([=](bool acc, int x) { return x>val? true:acc;}, false, l);
-
   
-  std::cout << "sum:" << sum << ", max:" << max << std::endl;
   std::cout << "anyLargerThanVal:" << anyLargerThanVal << std::endl;
 
   auto h1 = compose([](int x){return x+1;}, [](){ return 42;});
@@ -86,7 +87,7 @@ int main() {
   std::function<int(int,int)> adder = [](int a, int b)->int { return a+b;};
   auto sumFold = cfoldl(adder);
   std::cout << "after sumFold \n";
-  int sum2 = sumFold(100)(l);
+  int sum2 = sumFold(0)(l);
   std::cout << "sum2:" << sum2 << std::endl;
 
   return 0;

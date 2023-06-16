@@ -42,7 +42,22 @@ bool ifall(F f, List<T> lst) {
   else return false;
 }
 
+template<class T, class F>
+bool ifany(F f, List<T> lst) {
+  static_assert(std::is_convertible<F, std::function<bool(T)>>::value, 
+                 "Requires a function type bool(T)");
+  if (lst.isEmpty()) {
+    return false;
+  } 
+  if (f(lst.head()))
+    return true;
+  else return ifany(f, lst.tail());;
+}
+
+
 int main() {
+  std::cout << std::boolalpha;
+
   List<int> l;
   l = l.cons(3);
   l = l.cons(2);
@@ -54,6 +69,11 @@ int main() {
   print(l3);
  
   bool allOdd = ifall([](int x){ return x%2==1; }, l3);
+  std::cout << "allOdd:" << allOdd << std::endl;
+  bool anyZero = ifany([](int x){ return x==0; }, l3);
+  std::cout << "anyZero:" << anyZero << std::endl;
+  bool anyOne = ifany([](int x){ return x==1; }, l3);
+  std::cout << "anyOne:" << anyOne << std::endl;
  
   List<int> l2 = fmap<int>([](int x){ return x+1;}, l);
   std::cout << "l2:";
@@ -65,7 +85,7 @@ int main() {
     return any([](int v) { return v%2==0; }, e);
   };
 
-  std::cout << any_even(expr);
+  std::cout << "any_even:" << any_even(expr) << std::endl;
 
   return 0;
 }
