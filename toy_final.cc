@@ -1,205 +1,4 @@
-#include <string>
-#include <iostream>
-#include <variant>
-#include <map>
-#include <exception>
-#include <stdexcept>
-#include "box.h"
-#include "List.h"
-#include <functional>
 
-using std::variant;
-using std::string;
-
-// Definition of Expr variants
-struct Var {
-    string name;
-    Var(string _name): name(_name){};
-    operator std::string() const { return "Var("+name+")"; }
-};
-struct Int {
-    int val;
-    Int(int _val): val(_val){};
-    operator std::string() const { return "Int("+std::to_string(val)+")"; }
-};
-struct AUnit {
-    AUnit() {};
-    operator std::string() const { return "AUnit()"; }
-};
-using Expr = variant<Var, 
-                     Int,
-                     AUnit,
-                     box<struct IsAUnit>, 
-                     box<struct Add>, 
-                     box<struct IfGreater>, 
-                     box<struct MLet>,
-                     box<struct Fun>, 
-                     box<struct Closure>,
-                     box<struct APair>,
-                     box<struct Fst>,
-                     box<struct Snd>,
-                     box<struct Call>>; 
-
-template<typename T> bool is(Expr e);
-
-std::string toString(Expr e);
-
-struct Add {
-    Expr e1, e2;
-    Add(Expr _e1, Expr _e2): e1(_e1), e2(_e2) {}; 
-    operator std::string() const { 
-        return "Add("+toString(e1)+", "+toString(e2)+")";
-    }
-};
-struct IfGreater {
-    Expr e1, e2, e3, e4;
-    IfGreater(Expr _e1, Expr _e2, Expr _e3, Expr _e4): e1(_e1), e2(_e2), e3(_e3), e4(_e4) {};
-    operator std::string() const {
-        return "IfGreater("+toString(e1)+", "+toString(e2)+", "
-                           +toString(e3)+", "+toString(e4)+")";
-    }
-};
-struct MLet {
-    string varName;
-    Expr e1, e2;
-    MLet(string _varName, Expr _e1, Expr _e2): varName(_varName), e1(_e1), e2(_e2) {}; 
-    operator std::string() const { 
-        return "MLet("+varName+", "+toString(e1)+", "+toString(e2)+")";
-    }
-};
-struct APair {
-    Expr e1, e2;
-    APair(Expr _e1, Expr _e2): e1(_e1), e2(_e2) {};
-    operator std::string() const { 
-        return "APair("+toString(e1)+", "+toString(e2)+")";
-    }
-};
-struct Fst {
-    Expr e;
-    Fst(Expr _e): e(_e) {};
-    operator std::string() const { return "Fst("+toString(e)+")"; }
-};
-struct Snd {
-    Expr e;
-    Snd(Expr _e): e(_e) {};
-    operator std::string() const { return "Snd("+toString(e)+")"; }
-};
-struct IsAUnit {
-    Expr e;
-    IsAUnit(Expr _e): e(_e) {};
-    operator std::string() const { return "IsAUnit("+toString(e)+")"; }
-};
-
-struct Fun {
-    string funName;
-    string argName;
-    Expr body;
-    Fun(string _f, string _a, Expr _b): funName(_f), argName(_a), body(_b) {}; 
-    operator std::string() const { 
-        return "Fun("+funName+", "+argName+", "+toString(body)+")";
-    }
-};
-struct Closure {
-    std::map<string, Expr> env;
-    Fun f;
-    Closure(std::map<string, Expr> _env, Fun _f): env(_env), f(_f) {};
-    operator std::string() const { 
-        return "Closure(env, "+std::string(f)+")";
-    }
-};
-struct Call {
-    /* funExpr은 closure, 즉 env + code (function body)로 이루어져 있음 */
-    /* actual은 argument */
-    Expr funExpr, actual;
-    Call(Expr _fe, Expr _a): funExpr(_fe), actual(_a) {};
-    operator std::string() const { 
-        return "Call("+toString(funExpr)+", "+toString(actual)+")";
-    }
-};
-// End of Definition of Expr variants 
-
-// Functions for check variants.
-// e.g. is<APair>(e) or is<Int>(Expr(Int(42)))
-template<typename T>
-bool is(Expr e) { return std::holds_alternative<T>(e); }
-template<>
-bool is<Closure>(Expr e) { return std::holds_alternative<box<struct Closure>>(e); }
-template<>
-bool is<IsAUnit>(Expr e) { return std::holds_alternative<box<struct IsAUnit>>(e); }
-template<>
-bool is<Add>(Expr e) { return std::holds_alternative<box<struct Add>>(e); }
-template<>
-bool is<IfGreater>(Expr e) { return std::holds_alternative<box<struct IfGreater>>(e); }
-template<>
-bool is<MLet>(Expr e) { return std::holds_alternative<box<struct MLet>>(e); }
-template<>
-bool is<Fun>(Expr e) { return std::holds_alternative<box<struct Fun>>(e); }
-template<>
-bool is<APair>(Expr e) { return std::holds_alternative<box<struct APair>>(e); }
-template<>
-bool is<Fst>(Expr e) { return std::holds_alternative<box<struct Fst>>(e); }
-template<>
-bool is<Snd>(Expr e) { return std::holds_alternative<box<struct Snd>>(e); }
-template<>
-bool is<Call>(Expr e) { return std::holds_alternative<box<struct Call>>(e); }
-
-// Converting Expr to std::string representation.
-std::string toString(Expr e) {
-    if (is<Int>(e)) {
-        return std::get<Int>(e);
-    } else if (is<Var>(e)) {
-        return std::get<Var>(e);
-    } else if (is<AUnit>(e)) {
-        return std::get<AUnit>(e);
-    } else if (is<IsAUnit>(e)) {
-        return *std::get<box<struct IsAUnit>>(e);
-    } else if (is<box<struct Add>>(e)) {
-        Add add = *std::get<box<struct Add>>(e);
-        return add;
-    } else if (is<box<struct IfGreater>>(e)) {
-        IfGreater ifgt = *std::get<box<struct IfGreater>>(e);
-        return ifgt;
-    } else if (is<box<struct MLet>>(e)) {
-        MLet mlet = *std::get<box<struct MLet>>(e);
-        return mlet;
-    } else if (is<box<struct Fun>>(e)) {
-        Fun fun = *std::get<box<struct Fun>>(e);
-        return fun;
-    } else if (is<box<struct Closure>>(e)) {
-        Closure closure = *std::get<box<struct Closure>>(e);
-        return closure;
-    } else if (is<box<struct APair>>(e)) {
-        return *std::get<box<struct APair>>(e);
-    } else if (is<box<struct Fst>>(e)) {
-        return *std::get<box<struct Fst>>(e);
-    } else if (is<box<struct Snd>>(e)) {
-        return *std::get<box<struct Snd>>(e);
-    } else if (is<box<struct Call>>(e)) {
-        Call call = *std::get<box<struct Call>>(e);
-        return call;
-    } else {
-        throw std::runtime_error("toString(Expr): Unexpected Expr is given!");
-    }
-}
-
-// Asserts that given Expr is a value in MUPL.
-void assertValue(Expr e) {
-    if (is<APair>(e)) {
-        APair ap = *std::get<box<struct APair>>(e);
-        assertValue(ap.e1);
-        assertValue(ap.e2);
-    } else if (!(is<Int>(e) || 
-               is<Closure>(e) ||
-               is<AUnit>(e))) {
-        throw std::runtime_error(toString(e) + " is not a value!");
-    }
-}
-
-// Make a new environment by copying from the passed environment.
-std::map<string, Expr> makeNewEnvFrom(std::map<string, Expr> fromEnv) {
-    std::map<string, Expr> newEnv(fromEnv);
-    return newEnv;
-}
 
 Expr eval_under_env(Expr e, std::map<string, Expr> env) {
     return std::visit(overload {
@@ -250,11 +49,6 @@ Expr eval_under_env(Expr e, std::map<string, Expr> env) {
       }, e);
 }
 
-Expr eval(Expr e) {
-    std::map<string, Expr> env;
-    return eval_under_env(e, env);
-}
-
 template<class T, class U>
 std::function<std::function<U(List<T>)>(U)>
 cfoldl(std::function<U(U, T)> f) //f(acc, element)받기
@@ -270,24 +64,13 @@ cfoldl(std::function<U(U, T)> f) //f(acc, element)받기
     };
     return captured1;
 }
+
 List<int> l = l.cons(0).cons(1).cons(2).cons(3).cons(4);
 int sum = foldl([](int a, int b) { return a+b;}, 0, l);
 int better_sum = foldl([](int a, int b) { return a+b; }, l.head(), l.tail());
 
 int max = foldl([](int a, int b) { return a>b?a:b;}, 0, l);
 int better_max = foldl([](int a, int b) { return a>b?a:b; }, l.head(), l.tail());
-
-
-struct Constant { int val; };
-
-using Expr = std::variant<Constant,
-                          box<struct Negate>,
-                          box<struct Add>,
-                          box<struct Mult>>;
-
-struct Negate { Expr e; };
-struct Add { Expr e1; Expr e2; };
-struct Mult { Expr e1; Expr e2; };
 
 template<class F>
 bool any(F test, Expr e) {
@@ -326,11 +109,6 @@ bool ifany(F f, List<T> lst) {
   else return ifany(f, lst.tail());;
 }
 
-
-#include <iostream>
-#include <functional>
-#include <map>
-
 int fib_normal(int n) {
     if (n == 0 || n == 1) { return 1; }
     else { return fib_normal(n-1) + fib_normal(n-2); }
@@ -356,10 +134,6 @@ int fib_memoization(int n) {
         return res;
     }
 }
-
-
-#include <iostream>
-#include <functional>
 
 struct StreamPair {
     int val;
@@ -423,9 +197,6 @@ int main(int argc, char const *argv[])
     
     return 0;
 }
-
-
-#include <iostream>
 
 template<typename T>
 class Stream {
